@@ -8,7 +8,7 @@ import shutil
 import hashlib
 from pydub import AudioSegment
 
-from Espeak_TTSGenerator import ESpeakTTSGenerator
+from tts.TTS_Manager import TTSManager
 
 app = Flask(__name__)
 
@@ -26,6 +26,8 @@ jobs = {}
 
 file_format = "mp3"  # "wav"
 # file_format = "wav"
+
+ttsManager = TTSManager()
 
 
 class AudioJob:
@@ -53,18 +55,14 @@ class AudioJob:
 
             chunk_files = []
             for i, chunk in enumerate(chunks):
-                # Convert each chunk to audio using eSpeak but change it to a class the TTS engine
-                # chunk_file = os.path.join(job_temp_dir, f"chunk_{i}.wav")
-                # self._text_to_speech(chunk, chunk_file)
-                # chunk_files.append(chunk_file)
-                # Suppose you instantiate your desired TTS generator
-                tts_generator = ESpeakTTSGenerator()
+
+                ttsManager.select_tts(ttsManager.TTSOptions.ESPEAK)
 
                 # Generate chunk files using the selected TTS
                 chunk_file = os.path.join(
-                    job_temp_dir, f"chunk_{i}.{tts_generator.get_output_format()}"
+                    job_temp_dir, f"chunk_{i}.{ttsManager.get_output_format()}"
                 )
-                tts_generator.generate_tts(chunk, chunk_file)
+                ttsManager.generate_tts(chunk, chunk_file)
                 chunk_files.append(chunk_file)
 
                 # Update progress (allocate 70% of progress to speech generation)
