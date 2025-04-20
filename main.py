@@ -7,6 +7,7 @@ from datetime import datetime
 import shutil
 import hashlib
 from pydub import AudioSegment
+import re
 
 from tts.TTS_Manager import TTSManager
 
@@ -24,10 +25,20 @@ os.makedirs(RESULT_DIR, exist_ok=True)
 jobs = {}
 
 
-file_format = "mp3"  # "wav"
+file_format = "mp3"
 # file_format = "wav"
 
 ttsManager = TTSManager()
+
+
+def getSlicedText(text, charsToKeep):
+    return text.strip()[:charsToKeep]
+
+
+def sanitize_filename(input_str):
+    cleaned = input_str.replace("\n", "").replace("\r", "")
+    safe_str = re.sub(r"[^\w\-_.]", "_", cleaned)
+    return safe_str
 
 
 class AudioJob:
@@ -36,7 +47,11 @@ class AudioJob:
         self.text = text
         self.status = "processing"
         self.created_at = datetime.now()
-        self.output_file = os.path.join(RESULT_DIR, f"{self.job_id}.{file_format}")
+        sliced_text = getSlicedText(text, 20)
+        file_name_front = sanitize_filename(sliced_text)
+        file_name = f"{file_name_front}.{file_format}"
+        self.output_file_name = f"{file_name_front}_tts.{file_format}"
+        self.output_file_path = os.path.join(RESULT_DIR, self.output_file_name)
         self.error = None
         self.progress = 0  # Track progress from 0-100
 
@@ -73,12 +88,16 @@ class AudioJob:
 
             if file_format == "mp3":
 
-                self._merge_audio_files_pydub_wav_to_mp3(chunk_files, self.output_file)
+                self._merge_audio_files_pydub_wav_to_mp3(
+                    chunk_files, self.output_file_path
+                )
 
-                # self._merge_audio_files_ffmpeg_wav_to_mp3(chunk_files, self.output_file)
+                # self._merge_audio_files_ffmpeg_wav_to_mp3(chunk_files, self.output_file_path)
 
             else:
-                self._merge_audio_files_ffmpeg_wav_to_wav(chunk_files, self.output_file)
+                self._merge_audio_files_ffmpeg_wav_to_wav(
+                    chunk_files, self.output_file_path
+                )
             self.progress = 95  # 95% after merging
 
             # Clean up temp files for this job
@@ -293,12 +312,12 @@ def get_result(job_id):
         )
 
     # If completed, return the audio file
-    if os.path.exists(job.output_file):
+    if os.path.exists(job.output_file_path):
         return send_file(
-            job.output_file,
+            job.output_file_path,
             mimetype="audio/{file_format}",
             as_attachment=True,
-            download_name=f"text_to_speech_{job_id}.{file_format}",
+            download_name=job.output_file_name,
         )
     else:
         return jsonify({"error": "Audio file not found"}), 404

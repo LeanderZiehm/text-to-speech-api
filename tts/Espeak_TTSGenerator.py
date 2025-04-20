@@ -1,5 +1,5 @@
 import subprocess
-from Base_TTSGenerator import TTSGenerator
+from tts.Base_TTSGenerator import TTSGenerator
 
 
 class ESpeakTTSGenerator(TTSGenerator):

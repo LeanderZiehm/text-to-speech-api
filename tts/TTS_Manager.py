@@ -1,4 +1,4 @@
-from Espeak_TTSGenerator import ESpeakTTSGenerator
+from tts.Espeak_TTSGenerator import ESpeakTTSGenerator
 
 # enum
 from enum import Enum
